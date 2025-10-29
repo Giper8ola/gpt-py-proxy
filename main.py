@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="DeepSeek Proxy API")
+app = FastAPI(title="ChatGPT Proxy API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,15 +17,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = OpenAI(
-    api_key=os.environ.get("DEEPSEEK_API_KEY"),
-    base_url="https://api.deepseek.com"
-)
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
 class PromptRequest(BaseModel):
     prompt: str
-    model: str = "deepseek-chat"
+    model: str = "gpt-4o-mini"
     temperature: float = 0.7
     max_tokens: int = 10000
 
@@ -39,9 +36,9 @@ class ChatResponse(BaseModel):
 @app.get("/")
 async def root():
     return {
-        "message": "DeepSeek Proxy API",
+        "message": "ChatGPT Proxy API",
         "endpoints": {
-            "/chat": "POST - Send a prompt to a DeepSeek model",
+            "/chat": "POST - Send a prompt to ChatGPT",
             "/health": "GET - Health check"
         }
     }
@@ -55,8 +52,8 @@ async def health():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: PromptRequest):
     try:
-        if not os.environ.get("DEEPSEEK_API_KEY"):
-            raise HTTPException(status_code=500, detail="DEEPSEEK_API_KEY not configured")
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
 
         completion = client.chat.completions.create(
             model=request.model,
@@ -69,10 +66,10 @@ async def chat(request: PromptRequest):
 
         response_content = completion.choices[0].message.content
         if response_content is None:
-            raise HTTPException(status_code=500, detail="Empty response from DeepSeek API")
+            raise HTTPException(status_code=500, detail="Empty response from OpenAI")
 
         if completion.usage is None:
-            raise HTTPException(status_code=500, detail="No usage data from DeepSeek API")
+            raise HTTPException(status_code=500, detail="No usage data from OpenAI")
 
         return ChatResponse(
             response=response_content,
@@ -84,8 +81,6 @@ async def chat(request: PromptRequest):
             }
         )
     except Exception as e:
-        # Для лучшей отладки можно выводить ошибку в консоль
-        print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

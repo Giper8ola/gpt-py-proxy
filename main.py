@@ -17,14 +17,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
 
 
 class PromptRequest(BaseModel):
     prompt: str
-    model: str = "gpt-4o-mini"
-    temperature: float = 0.7
-    max_tokens: int = 10000
+    model: str = "gemini-2.5-flash"
 
 
 class ChatResponse(BaseModel):
@@ -57,11 +58,13 @@ async def chat(request: PromptRequest):
 
         completion = client.chat.completions.create(
             model=request.model,
+            reasoning_effort=None,
             messages=[
-                {"role": "user", "content": request.prompt}
-            ],
-            temperature=request.temperature,
-            max_tokens=request.max_tokens
+                {
+                    "role": "user",
+                    "content": request.prompt
+                }
+            ]
         )
 
         response_content = completion.choices[0].message.content

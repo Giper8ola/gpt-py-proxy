@@ -19,13 +19,12 @@ app.add_middleware(
 
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 )
 
 
 class PromptRequest(BaseModel):
     prompt: str
-    model: str = "gemini-2.5-flash"
+    model: str = "gpt-4o-mini"
 
 
 class ChatResponse(BaseModel):
